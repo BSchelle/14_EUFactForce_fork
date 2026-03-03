@@ -164,3 +164,6 @@ cython_debug/
 
 # Parsing generated artifacts
 ingestion/parsing/output/extracted_texts/
+eu_fact_force/exploration/docling/results/html/
+eu_fact_force/exploration/docling/results/json/
+eu_fact_force/exploration/docling/results/md/
