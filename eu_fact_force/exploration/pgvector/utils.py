@@ -39,7 +39,7 @@ def dense_search(input_vector, distance="cosine", n=5):
         SELECT id, content, dense_vector <=> '{input_vector}' as distance, rank() over (order by dense_vector <=> '{input_vector}')  FROM vector_store ORDER BY dense_vector <=> '{input_vector}' LIMIT {n};
         """
     else:
-        raise NotImplemented(f"Unknown distance: {distance}")
+        raise NotImplementedError(f"Unknown distance: {distance}")
 
     return query(sql)
 
