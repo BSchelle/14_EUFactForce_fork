@@ -25,17 +25,6 @@ def _manual_chunk_labels_for_strategy(gt_item: dict, strategy: str) -> list[dict
     return []
 
 
-def _weak_chunk_labels_for_strategy(gt_item: dict, strategy: str) -> list[dict]:
-    """Return weak labels for a strategy."""
-    weak_by_strategy = gt_item.get("weak_chunk_labels_by_strategy", {})
-    if not isinstance(weak_by_strategy, dict):
-        return []
-    rows = weak_by_strategy.get(strategy, [])
-    if not isinstance(rows, list):
-        return []
-    return [row for row in rows if isinstance(row, dict)]
-
-
 def normalize_chunk_labels(
     gt_item: dict, strategy: str
 ) -> tuple[set[str], dict[str, float], str]:
@@ -46,8 +35,6 @@ def normalize_chunk_labels(
       - "none": no chunk labels on this query
       - "manual_binary": only manual binary labels
       - "manual_graded": manual graded labels
-      - "weak_binary": only weak binary labels
-      - "weak_graded": weak graded labels
     """
     manual_binary = set(_manual_chunk_ids_for_strategy(gt_item, strategy))
     manual_rows = _manual_chunk_labels_for_strategy(gt_item, strategy)
@@ -64,19 +51,4 @@ def normalize_chunk_labels(
         return manual_binary, manual_graded, "manual_graded"
     if manual_binary:
         return manual_binary, {}, "manual_binary"
-
-    weak_rows = _weak_chunk_labels_for_strategy(gt_item, strategy)
-    weak_binary: set[str] = set()
-    weak_graded: dict[str, float] = {}
-    for row in weak_rows:
-        chunk_id = row["chunk_id"]
-        gain = CHUNK_LABEL_TO_GAIN[row["label"]]
-        weak_graded[chunk_id] = gain
-        if gain > 0:
-            weak_binary.add(chunk_id)
-
-    if weak_graded:
-        return weak_binary, weak_graded, "weak_graded"
-    if weak_binary:
-        return weak_binary, {}, "weak_binary"
     return set(), {}, "none"

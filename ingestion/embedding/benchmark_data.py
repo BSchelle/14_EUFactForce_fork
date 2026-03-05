@@ -94,44 +94,6 @@ def _validate_chunk_ids_by_strategy(by_strategy: object, idx: int, field_name: s
             )
 
 
-def _validate_weak_labels_by_strategy(weak_by_strategy: object, idx: int) -> None:
-    field_name = "weak_chunk_labels_by_strategy"
-    for strategy, rows in _require_dict(weak_by_strategy, field_name, idx).items():
-        _validate_strategy_name(strategy, field_name, idx)
-        rows = _require_list(rows, f"Each {field_name} entry", idx, strategy=strategy)
-        for row_idx, row in enumerate(rows):
-            if not isinstance(row, dict):
-                raise ValueError(
-                    "Each weak label row must be an object "
-                    f"{_error_suffix(idx, strategy=strategy, row_idx=row_idx)}"
-                )
-            _require_keys(
-                row,
-                {"chunk_id", "label", "confidence", "sources"},
-                "weak label",
-                idx,
-                strategy,
-                row_idx,
-            )
-            if row["label"] not in CHUNK_LABEL_TO_GAIN:
-                raise ValueError(
-                    f"Invalid weak label '{row['label']}' "
-                    f"{_error_suffix(idx, strategy=strategy, row_idx=row_idx)}"
-                )
-            if not isinstance(row["confidence"], (int, float)):
-                raise ValueError(
-                    "weak label confidence must be numeric "
-                    f"{_error_suffix(idx, strategy=strategy, row_idx=row_idx)}"
-                )
-            if not isinstance(row["sources"], list) or not all(
-                isinstance(source, str) for source in row["sources"]
-            ):
-                raise ValueError(
-                    "weak label sources must be a list[str] "
-                    f"{_error_suffix(idx, strategy=strategy, row_idx=row_idx)}"
-                )
-
-
 def _validate_required_ground_truth_fields(item: dict, idx: int) -> None:
     required_keys = {"query", "lang", "relevant_docs"}
     missing = required_keys - set(item.keys())
@@ -165,20 +127,9 @@ def _validate_relevant_chunk_ids_by_strategy_field(value: object, idx: int) -> N
     _validate_chunk_ids_by_strategy(value, idx, "relevant_chunk_ids_by_strategy")
 
 
-def _validate_weak_chunk_labels_by_strategy_field(value: object, idx: int) -> None:
-    _validate_weak_labels_by_strategy(value, idx)
-
-
-def _validate_weak_label_metadata_field(value: object, idx: int) -> None:
-    if not isinstance(value, dict):
-        raise ValueError(f"weak_label_metadata must be an object (index {idx}).")
-
-
 OPTIONAL_GROUND_TRUTH_FIELD_VALIDATORS: dict[str, Callable[[object, int], None]] = {
     "relevant_chunk_labels_by_strategy": _validate_relevant_chunk_labels_by_strategy_field,
     "relevant_chunk_ids_by_strategy": _validate_relevant_chunk_ids_by_strategy_field,
-    "weak_chunk_labels_by_strategy": _validate_weak_chunk_labels_by_strategy_field,
-    "weak_label_metadata": _validate_weak_label_metadata_field,
 }
 
 

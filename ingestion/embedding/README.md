@@ -6,13 +6,13 @@ Evaluates multilingual embedding models for the EU Fact Force semantic search pi
 
 Select the best open-source, multilingual embedding model to convert article chunks into vectors for similarity search. The model must handle French and English scientific text, run on CPU (no paid APIs), and produce embeddings suitable for storage in a vector database (Qdrant or pgvector).
 
-## Candidate Models
+## Model
+
+Current benchmark baseline is pinned to:
 
 | Model | Dimensions | Max tokens | Size | Notes |
 |-------|-----------|------------|------|-------|
-| `intfloat/multilingual-e5-base` | 768 | 512 | ~1.1 GB | Mentioned in project FAQ, good baseline |
-| `BAAI/bge-m3` | 1024 | 8192 | ~2.3 GB | Top MTEB multilingual retrieval, dense + sparse |
-| `sentence-transformers/LaBSE` | 768 | 256 | ~1.8 GB | Strong cross-language, but short context |
+| `intfloat/multilingual-e5-base` | 768 | 512 | ~1.1 GB | Selected baseline for current PR scope |
 
 ## Metrics
 
@@ -22,7 +22,7 @@ Select the best open-source, multilingual embedding model to convert article chu
 - **Embedding speed**: Chunks/second on CPU
 - **Vector dimensions**: Storage and search performance impact
 
-## Latest Results (Chunk-Level Benchmark)
+## Latest Results (Baseline)
 
 Run context:
 - Corpus: 10 documents split into 851 chunks (`chunk_size=1200`, `overlap=200`)
@@ -32,13 +32,6 @@ Run context:
 | Model | Dim | P@3 | P@5 | MRR | Speed (chunks/s) | Load (s) |
 |-------|-----|-----|-----|-----|------------------|----------|
 | `multilingual-e5-base` | 768 | 0.736 | 0.806 | **0.792** | 25.8 | 87.6 |
-| `bge-m3` | 1024 | 0.736 | **0.847** | 0.778 | 8.0 | 167.5 |
-| `LaBSE` | 768 | 0.597 | 0.826 | 0.778 | **35.1** | 97.2 |
-
-Cross-language first relevant rank (lower is better):
-- `multilingual-e5-base`: EN 1.6 | FR 1.7
-- `bge-m3`: EN 1.6 | FR 1.3
-- `LaBSE`: EN 1.7 | FR 2.0
 
 Evaluation caveat:
 - `ground_truth.json` is currently **doc-level** (`relevant_docs`), while retrieval is **chunk-level**.
