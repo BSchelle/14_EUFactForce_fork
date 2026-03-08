@@ -20,7 +20,7 @@ def hash_doi(doi: str) -> str:
     return hashlib.sha256(doi.encode()).hexdigest()
 
 
-def fetch_file_and_metadata(doi: str) -> tuple[str, list[str]]:
+def fetch_file_and_metadata(doi: str) -> tuple[Path, list[str]]:
     """
     Simulate an API call to fetch a PDF and metadata.
     V0: returns a local file path and a list of tags (tags_pubmed); no real HTTP call.
