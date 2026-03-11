@@ -40,6 +40,7 @@ header = html.Div(
                         DASHBOARD_NAME,
                         style={
                             "color": AppColors.blue,
+                            "font-weight": "bold",
                             "margin": "0",
                             "padding": "0",
                         },
@@ -64,12 +65,19 @@ header = html.Div(
     },
 )
 # Content
-graph_example = cyto.Cytoscape(
-    id="graph",
-    elements=elements,
-    stylesheet=stylesheet,
-    layout={"name": "cose"},
-    style={"width": "100%", "height": "400px"},
+graph_example = html.Div(
+    cyto.Cytoscape(
+        id="graph",
+        elements=elements,
+        stylesheet=stylesheet,
+        layout={"name": "cose"},
+        style={"width": "100%", "height": "500px"},
+    ),
+    style={
+        "border-radius": "15px",
+        "padding": "20px",
+        "background-color": AppColors.white,
+    },
 )
 
 
