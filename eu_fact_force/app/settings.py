@@ -159,7 +159,7 @@ STATIC_URL = "static/"
 # Must be an absolute filesystem path (string) for collectstatic / StaticFilesStorage
 STATIC_ROOT = str((BASE_DIR.parent / "staticfiles").resolve())
 
-# S3 / LocalStack storage (switch via AWS_S3_ENDPOINT_URL or USE_LOCAL_STACK)
+# S3 / MinIO / LocalStack storage (switch via AWS_S3_ENDPOINT_URL or USE_LOCAL_STACK)
 # django-storages reads AWS_S3_ENDPOINT_URL from this module
 AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL") or (
     "http://localhost:4566" if os.environ.get("USE_LOCAL_STACK") else None

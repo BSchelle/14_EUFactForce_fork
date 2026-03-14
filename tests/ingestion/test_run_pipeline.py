@@ -1,6 +1,8 @@
 """Tests for the ingestion pipeline using the project README.md as test file."""
 
+import os
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -16,7 +18,17 @@ def test_run_pipeline_uses_readme_md(tmp_storage):
     readme_fn = PROJECT_ROOT / "README.md"
     assert readme_fn.exists(), f"Test file must exist: {readme_fn}"
 
-    source_file, _ = run_pipeline("README.md")
+    def fake_upload_fileobj(Fileobj, Bucket, Key):
+        dest = tmp_storage / Key
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(Fileobj.read())
+
+    with (
+        patch.dict(os.environ, {"AWS_STORAGE_BUCKET_NAME": "test-bucket"}, clear=False),
+        patch("eu_fact_force.ingestion.s3.get_s3_client") as mock_client,
+    ):
+        mock_client.return_value.upload_fileobj = fake_upload_fileobj
+        source_file, _ = run_pipeline("README.md")
 
     assert source_file is not None
     assert source_file.doi == "README.md"

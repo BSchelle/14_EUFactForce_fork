@@ -100,13 +100,13 @@ uv run pytest
 
 ### Déploiement de l'application
 
-L'application se compose d'un serveur Django, d'une base PostgreSQL (avec pgvector) et de LocalStack pour le stockage S3. 
+L'application se compose d'un serveur Django, d'une base PostgreSQL (avec pgvector) et de **RustFS** pour le stockage S3 (compatible AWS), avec une interface web pour déposer des fichiers manuellement.
 Pour déployer et utiliser l'application en local :
 
 **1. Prérequis**
 
 - [Python 3.12+](https://www.python.org/) et [uv](https://docs.astral.sh/uv/)
-- [Docker](https://www.docker.com/) et Docker Compose (pour Postgres et LocalStack)
+- [Docker](https://www.docker.com/) et Docker Compose (pour Postgres et RustFS)
 
 **2. Variables d'environnement**
 
@@ -118,7 +118,7 @@ cp .env.template .env
 
 Pour un usage local avec les services Docker, les valeurs par défaut de `.env.template` (notamment `DATABASE_URL=postgresql://eu_fact_force:eu_fact_force@localhost:5432/eu_fact_force`) conviennent.
 
-**3. Lancer les services (Postgres et LocalStack)**
+**3. Lancer les services (Postgres et RustFS)**
 
 À la racine du projet :
 
@@ -126,7 +126,7 @@ Pour un usage local avec les services Docker, les valeurs par défaut de `.env.t
 docker compose up -d
 ```
 
-Cela démarre PostgreSQL (port 5432) et LocalStack S3 (port 4566). Le bucket configuré est créé automatiquement au démarrage de LocalStack.
+Cela démarre PostgreSQL (port 5432) et RustFS (API S3 sur le port 9000). Le bucket configuré est créé automatiquement au premier démarrage. **Interface web RustFS** : [http://localhost:9001](http://localhost:9001) — identifiants S3 (Access Key / Secret Key) : ceux définis dans `.env` (par défaut `minioadmin`). Vous pouvez y créer des buckets, des dossiers et déposer des fichiers manuellement.
 
 **4. Installer les dépendances et appliquer les migrations**
 
@@ -153,14 +153,14 @@ L'application est alors disponible sur [http://127.0.0.1:8000/](http://127.0.0.1
 
 **Utilisation du stockage S3 en local**
 
-Pour que Django utilise LocalStack pour le stockage des fichiers, décommentez et renseignez dans `.env` les variables S3 (voir `.env.template`), par exemple :
+Avec `docker compose`, l’app est configurée pour utiliser RustFS. Pour lancer Django au host (sans conteneur app) et pointer vers RustFS, décommentez dans `.env` les variables S3 (voir `.env.template`) et définissez par exemple :
 
 ```bash
-USE_LOCAL_STACK=1
-AWS_ACCESS_KEY_ID=test
-AWS_SECRET_ACCESS_KEY=test
+AWS_S3_ENDPOINT_URL=http://localhost:9000
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
 AWS_STORAGE_BUCKET_NAME=eu-fact-force-files
 AWS_S3_REGION_NAME=eu-west-1
 ```
 
-Sans ces variables, l'application utilise le stockage fichier local par défaut.
+Sans ces variables, l’application utilise le stockage fichier local par défaut.
