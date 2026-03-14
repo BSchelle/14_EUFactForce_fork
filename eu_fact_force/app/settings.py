@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -25,6 +26,13 @@ _load_env = BASE_DIR.parent / ".env"
 if _load_env.exists():
     load_dotenv(_load_env)
 
+# Sous pytest : forcer S3 local (RustFS) pour éviter InvalidAccessKeyId avec des clés .env
+_run_by_pytest = "pytest" in sys.argv[0] or "pytest" in str(sys.argv)
+if _run_by_pytest:
+    os.environ["AWS_S3_ENDPOINT_URL"] = "http://localhost:9000"
+    os.environ["AWS_ACCESS_KEY_ID"] = "minioadmin"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin"
+    os.environ["AWS_STORAGE_BUCKET_NAME"] = "eu-fact-force-files"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/

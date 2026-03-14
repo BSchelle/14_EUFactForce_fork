@@ -30,6 +30,7 @@ services:
       - traefik.docker.network=d4g-internal
       - traefik.http.services.eu-fact-force.loadbalancer.server.port=8000
 
+  # PostgreSQL 18+ : monter sur /var/lib/postgresql (l’image gère le sous-dossier de version).
   postgres:
     image: pgvector/pgvector:pg18-trixie
     environment:
@@ -37,9 +38,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eu_fact_force}
       POSTGRES_DB: ${POSTGRES_DB:-eu_fact_force}
     ports:
-      - 5432
+      - "5432:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eu_fact_force} -d ${POSTGRES_DB:-eu_fact_force}"]
