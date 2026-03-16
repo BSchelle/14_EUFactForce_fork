@@ -163,9 +163,13 @@ STATIC_ROOT = str((BASE_DIR.parent / "staticfiles").resolve())
 
 # S3 / MinIO / LocalStack storage (switch via AWS_S3_ENDPOINT_URL or USE_LOCAL_STACK)
 # django-storages reads AWS_S3_ENDPOINT_URL from this module
-AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL") or (
-    "http://localhost:4566" if os.environ.get("USE_LOCAL_STACK") else None
-)
+# Valeurs par défaut : RustFS local (9000) ou LocalStack (4566) si USE_LOCAL_STACK=1
+AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL") or "http://localhost:9000"
+if AWS_S3_ENDPOINT_URL and (
+    "localhost" in AWS_S3_ENDPOINT_URL or "127.0.0.1" in AWS_S3_ENDPOINT_URL
+):
+    os.environ.setdefault("AWS_ACCESS_KEY_ID", "minioadmin")
+    os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "minioadmin")
 if os.environ.get("AWS_STORAGE_BUCKET_NAME"):
     STORAGES = {
         "default": {

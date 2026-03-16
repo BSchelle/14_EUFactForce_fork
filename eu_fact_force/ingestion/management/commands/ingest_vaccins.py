@@ -12,8 +12,8 @@ from django.core.management.base import BaseCommand
 
 from eu_fact_force.ingestion.embedding import add_embeddings
 from eu_fact_force.ingestion.parsing import parse_file
-from eu_fact_force.ingestion.services import save_chunks, save_to_s3_and_postgres
 from eu_fact_force.ingestion.s3 import get_s3_client
+from eu_fact_force.ingestion.services import save_chunks, save_to_s3_and_postgres
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,9 @@ def fetch_annotated_list(s3_client) -> list[dict]:
     return data
 
 
-def download_pdf_and_json(s3_client, key: str, dest_dir: Path) -> tuple[Path, Path, list]:
+def download_pdf_and_json(
+    s3_client, key: str, dest_dir: Path
+) -> tuple[Path, Path, list]:
     """
     Download pdf/<key>.pdf and pdf/<key>.json into dest_dir.
     Returns (path_to_pdf, path_to_json, tags_pubmed from JSON).
@@ -88,14 +90,20 @@ class Command(BaseCommand):
         try:
             entries = fetch_annotated_list(s3_client)
         except Exception:
-            logger.exception("Failed to fetch %s from bucket %s", VACCINS_ANNOTATED_KEY, PERFORMANCES_BUCKET_NAME)
+            logger.exception(
+                "Failed to fetch %s from bucket %s",
+                VACCINS_ANNOTATED_KEY,
+                PERFORMANCES_BUCKET_NAME,
+            )
             raise
 
         if dry_run:
             keys = [Path(d["filename"]).stem for d in entries if d.get("filename")]
             for k in keys:
                 self.stdout.write(k)
-            self.stdout.write(self.style.SUCCESS(f"Dry run: {len(keys)} entries would be processed."))
+            self.stdout.write(
+                self.style.SUCCESS(f"Dry run: {len(keys)} entries would be processed.")
+            )
             return
 
         processed = 0
@@ -112,7 +120,9 @@ class Command(BaseCommand):
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
                 try:
-                    pdf_path, _json_path, tags_pubmed = download_pdf_and_json(s3_client, key, tmpdir_path)
+                    pdf_path, _json_path, tags_pubmed = download_pdf_and_json(
+                        s3_client, key, tmpdir_path
+                    )
                 except FileNotFoundError as e:
                     logger.warning("Skip %s: %s", key, e)
                     skipped += 1
