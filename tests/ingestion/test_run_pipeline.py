@@ -13,7 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 @pytest.mark.django_db
-def test_run_pipeline_uses_readme_md(tmp_storage):
+def test_run_pipeline_uses_readme_md(tmp_storage, monkeypatch):
     """Run the full pipeline with the project README.md as the test file."""
     readme_fn = PROJECT_ROOT / "README.md"
     assert readme_fn.exists(), f"Test file must exist: {readme_fn}"

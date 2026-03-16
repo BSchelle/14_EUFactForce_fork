@@ -4,6 +4,7 @@ This file is mostly a placeholder for future implementation.
 Create a dedicated file for real pipeline steps.
 """
 
+import hashlib
 from pathlib import Path
 
 from eu_fact_force.ingestion.embedding import add_embeddings
@@ -12,7 +13,14 @@ from eu_fact_force.ingestion.parsing import parse_file
 from .models import DocumentChunk, FileMetadata, SourceFile
 
 
-def fetch_file_and_metadata(doi: str) -> tuple[str, list[str]]:
+def hash_doi(doi: str) -> str:
+    """
+    Hash the DOI to a string of 128 bits.
+    """
+    return hashlib.sha256(doi.encode()).hexdigest()
+
+
+def fetch_file_and_metadata(doi: str) -> tuple[Path, list[str]]:
     """
     Simulate an API call to fetch a PDF and metadata.
     V0: returns a local file path and a list of tags (tags_pubmed); no real HTTP call.
