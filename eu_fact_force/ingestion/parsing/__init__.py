@@ -8,6 +8,7 @@ import tempfile
 from eu_fact_force.exploration.parsing_benchmarking.benchmarking.parsers import (
     parse_docling,
 )
+from eu_fact_force.ingestion.chunking import MAX_CHUNK_CHARS, split_into_paragraph_chunks
 
 
 @contextmanager
@@ -52,7 +53,6 @@ def parse_file(source_file) -> list[str]:
     Parse the source file and return paragraph-bounded text chunks.
     As a v0 we assume the chunks are the tags.
     """
-    from eu_fact_force.ingestion.chunking import MAX_CHUNK_CHARS, split_into_paragraph_chunks
 
     full_text = _extract_text_from_source_file(source_file)
     return split_into_paragraph_chunks(full_text, max_chunk_chars=MAX_CHUNK_CHARS)
