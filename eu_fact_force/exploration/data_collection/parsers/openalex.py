@@ -5,6 +5,7 @@ from parsers.base import MetadataParser
 
 class OpenAlexMetadataParser(MetadataParser):
     """Fetches metadata from the OpenAlex API (https://api.openalex.org)."""
+
     def __init__(self):
         self.url = "https://api.openalex.org/works/doi:{doi}"
         self.cited_articles_url = "https://api.openalex.org/works?filter=ids.openalex:{ids}&select=id,doi&per-page=200"
@@ -34,9 +35,11 @@ class OpenAlexMetadataParser(MetadataParser):
             return []
         results = []
         for i in range(0, len(ids), 100):
-            response = requests.get(self.cited_articles_url.format(ids="|".join(ids[i:i + 100])))
+            response = requests.get(self.cited_articles_url.format(ids="|".join(ids[i: i + 100])))
             response.raise_for_status()
-            results += [r["doi"].removeprefix("https://doi.org/") for r in response.json().get("results", []) if r.get("doi")]
+            results += [
+                r["doi"].removeprefix("https://doi.org/") for r in response.json().get("results", []) if r.get("doi")
+            ]
         return results
 
     def _get_doi(self, doc):
@@ -88,6 +91,7 @@ class OpenAlexMetadataParser(MetadataParser):
 
 if __name__ == "__main__":
     import json
+
     parser = OpenAlexMetadataParser()
     metadata = parser.get_metadata("10.1128/mbio.01735-25")
     print(json.dumps(metadata, indent=2, ensure_ascii=False))

@@ -5,6 +5,7 @@ from parsers.base import MetadataParser
 
 class PubMedMetadataParser(MetadataParser):
     """Fetches metadata from the PubMed API (https://eutils.ncbi.nlm.nih.gov)."""
+
     def __init__(self):
         self.search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
         self.summary_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
@@ -51,6 +52,7 @@ class PubMedMetadataParser(MetadataParser):
 
 if __name__ == "__main__":
     import json
+
     parser = PubMedMetadataParser()
     metadata = parser.get_metadata("10.1016/S0140-6736(97)11096-0")
     print(json.dumps(metadata, indent=2, ensure_ascii=False))

@@ -5,6 +5,7 @@ from parsers.base import MetadataParser
 
 class CrossrefMetadataParser(MetadataParser):
     """Fetches metadata from the Crossref API (https://api.crossref.org)."""
+
     def __init__(self):
         self.url = "https://api.crossref.org/works/{doi}"
 
@@ -82,6 +83,7 @@ class CrossrefMetadataParser(MetadataParser):
 
 if __name__ == "__main__":
     import json
+
     parser = CrossrefMetadataParser()
     metadata = parser.get_metadata("10.1016/S0140-6736(97)11096-0")
     print(json.dumps(metadata, indent=2, ensure_ascii=False))

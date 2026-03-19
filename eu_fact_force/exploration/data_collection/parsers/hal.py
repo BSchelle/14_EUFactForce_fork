@@ -7,11 +7,14 @@ from parsers.base import MetadataParser
 
 class HALMetadataParser(MetadataParser):
     """Fetches metadata from the HAL open archive API (https://api.archives-ouvertes.fr)."""
+
     def __init__(self):
         self.url = "https://api.archives-ouvertes.fr/search/?q=doiId_s:{doi}&fl=*"
 
     def _get_type(self, doc):
-        return {"ART": "article", "THESIS": "thesis", "REPORT": "report"}.get(doc.get("docType_s"), doc.get("docType_s"))
+        return {"ART": "article", "THESIS": "thesis", "REPORT": "report"}.get(
+            doc.get("docType_s"), doc.get("docType_s")
+        )
 
     def _get_keywords(self, doc):
         return next((doc[key] for key in ["mesh_s", "keyword_s"] if doc.get(key)), None)
@@ -56,6 +59,7 @@ class HALMetadataParser(MetadataParser):
 
 if __name__ == "__main__":
     import json
+
     parser = HALMetadataParser()
     metadata = parser.get_metadata("10.26855/ijcemr.2021.01.001")
     print(json.dumps(metadata, indent=2, ensure_ascii=False))
