@@ -1,92 +1,77 @@
 # data_collection
 
-Fetches bibliographic metadata and PDF for a scientific article from its DOI.
-
-## Files
-
-| File | Role |
-|---|---|
-| `main.py` | CLI entry point — fetches metadata and downloads the PDF |
-| `metadata.py` | Metadata fetching logic and API configuration |
-| `pdf.py` | PDF download logic |
+Fetches metadata and PDFs for scientific articles by DOI, aggregating results across multiple APIs.
 
 ## Usage
 
 ```bash
-python3 main.py --doi "10.1038/s41562-021-01122-8"
-python3 main.py --doi "10.1038/s41562-021-01122-8" --output-dir my_pdfs/
+python3 main.py --doi 10.1128/mbio.01735-25
 ```
 
-Outputs a JSON object to stdout with the article metadata, and saves the PDF as `{output-dir}/{id}.pdf`.
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--doi` | *(required)* | DOI of the article |
+| `--json-dir` | `json/` | Directory for metadata output |
+| `--pdf-dir` | `pdf/` | Directory for PDF output |
+| `--no-pdf` | | Skip PDF download |
 
-The article `id` is derived from the DOI by replacing `/`, `-` and `.` with `_`
-(e.g. `10.1038/s41562-021-01122-8` → `10_1038_s41562-021-01122-8`).
+**Output:** `<json-dir>/<id>.json` and optionally `<pdf-dir>/<id>.pdf`
 
-### Fetch metadata only
+The article `id` is the DOI with `/`, `-`, `.` replaced by `_`.
 
-```bash
-python3 metadata.py --doi "10.1038/s41562-021-01122-8"
-python3 metadata.py --doi "10.1038/s41562-021-01122-8" --api CrossRef
-```
-
-### Download PDF only
-
-```bash
-python3 pdf.py --doi "10.1038/s41562-021-01122-8"
-python3 pdf.py --doi "10.1038/s41562-021-01122-8" --output-dir my_pdfs/
-```
-
-## Metadata output
+## Metadata fields
 
 ```json
 {
-  "id": "10_1038_s41562-021-01122-8",
+  "id": "10_1128_mbio_01735-25",
   "found": true,
-  "sources": ["CrossRef", "OpenAlex"],
+  "sources": ["CrossrefMetadataParser", "OpenAlexMetadataParser"],
   "article name": "...",
-  "author": ["Author One", "Author Two"],
+  "authors": ["Author One", "Author Two"],
   "journal": "...",
-  "publish date": "2021-06-07",
+  "publish date": "2024-01-15",
   "link": "https://...",
   "keywords": ["keyword1", "keyword2"],
   "cited articles": ["10.1000/xyz123", "..."],
-  "doi code": "10.1038/s41562-021-01122-8",
-  "article type": "journal-article",
-  "open access": false,
+  "doi": "10.1128/mbio.01735-25",
+  "document type": "journal-article",
+  "open access": true,
   "status": "published"
 }
 ```
 
-Fields may be `null` if not available in any API. `sources` lists which APIs returned a result.
+Fields may be `null` if unavailable. For each field, the most complete value across all APIs is kept (longest list or string). `sources` lists which APIs returned a result.
 
-For each field, the most complete value across all APIs is kept (longest list or string).
+## Parsers
 
-## Supported APIs
+| Parser | API | PDF |
+|--------|-----|-----|
+| `CrossrefMetadataParser` | [api.crossref.org](https://api.crossref.org) | Yes (if OA link available) |
+| `OpenAlexMetadataParser` | [api.openalex.org](https://api.openalex.org) | Yes (OA locations) |
+| `PubMedMetadataParser` | [eutils.ncbi.nlm.nih.gov](https://eutils.ncbi.nlm.nih.gov) | No |
+| `HALMetadataParser` | [api.archives-ouvertes.fr](https://api.archives-ouvertes.fr) | Yes |
+| `ArxivMetadataParser` | [arxiv.org](https://arxiv.org) | Yes (preprints only) |
 
-| API | URL | Notable fields |
-|---|---|---|
-| **CrossRef** | `api.crossref.org` | cited articles, retraction/correction status |
-| **HAL** | `api.archives-ouvertes.fr` | French institutional publications |
-| **OpenAlex** | `api.openalex.org` | open-access PDF link, MeSH keywords |
+## Adding a parser
 
-APIs are queried in the order: CrossRef → HAL → OpenAlex.
+1. Create `parsers/myapi.py` extending `MetadataParser`
+2. Implement `get_metadata(doi) -> dict` and `get_pdf_url(doi) -> list[str]`
+3. Add it to `PARSERS` in `parsers/__init__.py`
 
-## Adding a new API
+## Structure
 
-Add an entry to `API_CONFIG` in `metadata.py` and append the name to `API_ORDER`:
-
-```python
-"MyAPI": {
-    "url": "https://api.example.com/works/",  # DOI is appended
-    "url_suffix": "",                          # optional suffix after the DOI
-    "response_root": "/data/item",            # path to the document root in the response
-    "fields": {
-        "article name": "/data/title",        # leading "/" = path from response root
-        "author": "authors/name",             # no leading "/" = path from document root
-        "keywords": {"fallback": ["mesh", "tags"]},
-        ...
-    },
-},
+```
+data_collection/
+  main.py          # CLI entry point
+  utils.py         # doi_to_id, dict_to_string
+  parsers/
+    __init__.py    # PARSERS list
+    base.py        # MetadataParser base class
+    crossref.py
+    openalex.py
+    pubmed.py
+    hal.py
+    arxiv.py
 ```
 
-See the `_extract_field` docstring in `metadata.py` for the full list of supported path spec formats.
+To run a single parser: `python3 -m parsers.crossref` from `data_collection/`.
