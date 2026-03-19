@@ -1,5 +1,6 @@
 from metadata_parser import MetadataParser
 import requests
+from typing import Optional
 
 
 class OpenAlexMetadataParser(MetadataParser):
@@ -80,9 +81,24 @@ class OpenAlexMetadataParser(MetadataParser):
             "status":          self._get_status(doc),
         }
 
+    def get_pdf_url(self, doi) -> Optional[str]:
+        """Return the PDF URL for a DOI from OpenAlex (best open-access location), or None if not found."""
+        try:
+            response = requests.get(f"https://api.openalex.org/works/doi:{doi}", timeout=10)
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            doc = response.json()
+            location = doc.get("best_oa_location") or {}
+            return location.get("pdf_url") or (doc.get("open_access") or {}).get("oa_url")
+        except Exception as e:
+            print(f"OpenAlex error: {e}")
+            return None
+
 
 if __name__ == "__main__":
     parser = OpenAlexMetadataParser()
-    doi = "10.1016/S0140-6736(97)11096-0"
+    doi = "10.1056/nejmoa2035389"
     metadata = parser.get_metadata(doi)
     print(metadata)
+    parser.download_pdf(doi)

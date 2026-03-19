@@ -1,5 +1,6 @@
 from metadata_parser import MetadataParser
 import requests
+from typing import Optional
 
 
 class CrossrefMetadataParser(MetadataParser):
@@ -60,6 +61,20 @@ class CrossrefMetadataParser(MetadataParser):
             "status":         self._get_status(doc),
         }
 
+    def get_pdf_url(self, doi: str) -> Optional[str]:
+        try:
+            response = requests.get(f"https://api.crossref.org/works/doi/{doi}", timeout=10)
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            for link in response.json().get("message", {}).get("link", []):
+                if "pdf" in link.get("content-type", "") and link.get("URL"):
+                    return link["URL"]
+            return None
+        except Exception as e:
+            print(f"CrossRef error: {e}")
+            return None
+
 
 
 if __name__ == "__main__":
@@ -67,3 +82,4 @@ if __name__ == "__main__":
     doi = "10.1016/S0140-6736(97)11096-0"
     metadata = parser.get_metadata(doi)
     print(metadata)
+    parser.download_pdf(doi)

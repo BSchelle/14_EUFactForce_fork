@@ -64,6 +64,9 @@ class PubMedMetadataParser(MetadataParser):
             "status":          self._get_status(doc),
         }
 
+    def get_pdf_url(self, doi):
+        return None
+
 
 if __name__ == "__main__":
     import argparse

@@ -1,4 +1,10 @@
 from abc import ABC, abstractmethod
+import xml.etree.ElementTree as ET
+from typing import Optional
+from utils import doi_to_id
+import os
+
+
 import requests
 
 
@@ -24,14 +30,30 @@ class MetadataParser(ABC):
     def get_metadata(self, doi: str) -> dict:
         pass
 
-    def download_pdf(self, pdf_url, save_path):
-        response = requests.get(pdf_url)
-        if response.status_code == 200:
-            with open(save_path, 'wb') as f:
+    @abstractmethod
+    def get_pdf_url(self, doi: str) -> Optional[str]:
+        pass
+
+    def download_pdf(self, doi: str, output_dir: str = 'pdf') -> bool:
+        id = doi_to_id(doi)
+        output_path = os.path.join(output_dir, f"{id}.pdf")
+        
+        pdf_url = self.get_pdf_url(doi)
+        if not pdf_url:
+            print("PDF URL not found.")
+            return False
+        try:
+            response = requests.get(pdf_url, timeout=30)
+            response.raise_for_status()
+            if not response.content.startswith(b"%PDF"):
+                print(f"Content at {pdf_url} is not a valid PDF (possibly a paywall page).")
+                return False
+            with open(output_path, "wb") as f:
                 f.write(response.content)
-            print(f"PDF downloaded successfully to {save_path}")
-        else:
-            print(f"Failed to download PDF. Status code: {response.status_code}")
+            return True
+        except Exception as e:
+            print(f"Download failed: {e}")
+            return False
 
 
 class HALMetadataParser(MetadataParser):
@@ -66,11 +88,30 @@ class HALMetadataParser(MetadataParser):
             "open access":    doc.get("openAccess_bool"),
             "status":         None,
         }
-    
+
+    def get_pdf_url(self, doi: str) -> Optional[str]:
+        try:
+            response = requests.get(
+                f"https://api.archives-ouvertes.fr/search/?q=doiId_s:{doi}&wt=xml&fl=uri_s",
+                timeout=10,
+            )
+            response.raise_for_status()
+            root = ET.fromstring(response.content)
+            if int(root.find(".//result").get("numFound", "0")) == 0:
+                return None
+            uri_el = root.find(".//str[@name='uri_s']")
+            if uri_el is None or not uri_el.text:
+                return None
+            return f"{uri_el.text}/document"
+        except Exception as e:
+            print(f"HAL error: {e}")
+            return False
 
 
 if __name__ == "__main__":
     parser = HALMetadataParser()
     doi = "10.26855/ijcemr.2021.01.001"
     metadata = parser.get_metadata(doi)
+    success = parser.download_pdf(doi)
     print(metadata)
+    print(f"success: {success}")
