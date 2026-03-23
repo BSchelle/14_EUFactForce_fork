@@ -11,6 +11,8 @@ class HALMetadataParser(MetadataParser):
     """Fetches metadata from the HAL open archive API (https://api.archives-ouvertes.fr)."""
 
     def __init__(self):
+        super().__init__()
+        self.api_name = "hal"
         self.url = "https://api.archives-ouvertes.fr/search/?q=doiId_s:{doi}&fl=*"
 
     def _get_type(self, doc):
@@ -57,27 +59,6 @@ class HALMetadataParser(MetadataParser):
         except Exception as e:
             print(f"HAL error: {e}")
             return []
-
-    def download_pdf(self, doi: str, output_dir: str = "pdf") -> bool:
-        """Download the first valid PDF found and save it to output_dir. Returns True on success."""
-        output_path = os.path.join(output_dir, f"{doi_to_id(doi)}.pdf")
-        pdf_urls = self.get_pdf_url(doi)
-        if not pdf_urls:
-            return False
-        try:
-            for pdf_url in pdf_urls:
-                response = requests.get(pdf_url, timeout=30)
-                response.raise_for_status()
-                if not response.content.startswith(b"%PDF"):
-                    print(f"Content at {pdf_url} is not a valid PDF (possibly a paywall page).")
-                    continue
-                with open(output_path, "wb") as f:
-                    f.write(response.content)
-                return True
-            return False
-        except Exception as e:
-            print(f"Download failed: {e}")
-            return False
 
 
 if __name__ == "__main__":

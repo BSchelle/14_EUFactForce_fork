@@ -7,6 +7,8 @@ class OpenAlexMetadataParser(MetadataParser):
     """Fetches metadata from the OpenAlex API (https://api.openalex.org)."""
 
     def __init__(self):
+        super().__init__()
+        self.api_name = "openalex"
         self.url = "https://api.openalex.org/works/doi:{doi}"
         self.cited_articles_url = "https://api.openalex.org/works?filter=ids.openalex:{ids}&select=id,doi&per-page=200"
 
@@ -87,7 +89,7 @@ class OpenAlexMetadataParser(MetadataParser):
         except Exception as e:
             print(f"OpenAlex error: {e}")
             return []
-
+        
 
 if __name__ == "__main__":
     import json
