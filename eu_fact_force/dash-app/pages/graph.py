@@ -23,7 +23,7 @@ def make_layout():
                     ),
                     dbc.Col(
                         dbc.Button(
-                            "Rechercher",
+                            "Search",
                             id="search-button",
                             color="primary",
                             className="me-1",
