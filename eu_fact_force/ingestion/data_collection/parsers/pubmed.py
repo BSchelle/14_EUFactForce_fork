@@ -59,5 +59,5 @@ if __name__ == "__main__":
     import json
 
     parser = PubMedMetadataParser()
-    metadata = parser.get_metadata("10.1016/S0140-6736(97)11096-0")
+    metadata = parser.get_metadata("10.7326/M18-2101")
     print(json.dumps(metadata, indent=2, ensure_ascii=False))

@@ -95,5 +95,5 @@ if __name__ == "__main__":
     import json
 
     parser = OpenAlexMetadataParser()
-    metadata = parser.get_metadata("10.1128/mbio.01735-25")
+    metadata = parser.get_metadata("10.7326/M18-2101")
     print(json.dumps(metadata, indent=2, ensure_ascii=False))
