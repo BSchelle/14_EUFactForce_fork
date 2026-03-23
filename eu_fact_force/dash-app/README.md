@@ -1,6 +1,6 @@
-# Exploration - Dash Cytoscape
+# Dash app
 
-This folder contains a first version of a local Dash app to explore Cytoscape capabilities. 
+This folder contains a first version of a local Dash app. 
 
 # Repo structure
 - `app.py`: the main app file.
