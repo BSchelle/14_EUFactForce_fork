@@ -1,6 +1,6 @@
 import arxiv
 
-from .base import MetadataParser
+from eu_fact_force.ingestion.data_collection.parsers.base import MetadataParser
 
 ARXIV_DOI_PREFIX = "10.48550/arXiv."
 

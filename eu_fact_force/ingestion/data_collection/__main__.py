@@ -6,9 +6,9 @@ import argparse
 import json
 import os
 
-from .collector import fetch_all
-from .parsers import PARSERS
-from .parsers.base import doi_to_id
+from eu_fact_force.ingestion.data_collection.collector import fetch_all
+from eu_fact_force.ingestion.data_collection.parsers import PARSERS
+from eu_fact_force.ingestion.data_collection.parsers.base import doi_to_id
 
 _BASE_DIR = os.path.dirname(__file__)
 

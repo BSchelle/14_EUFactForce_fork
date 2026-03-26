@@ -1,6 +1,6 @@
 import requests
 
-from .base import MetadataParser
+from eu_fact_force.ingestion.data_collection.parsers.base import MetadataParser
 
 
 class HALMetadataParser(MetadataParser):

@@ -1,6 +1,6 @@
 import logging
 
-from .parsers import PARSERS
+from eu_fact_force.ingestion.data_collection.parsers import PARSERS
 
 logger = logging.getLogger(__name__)
 
