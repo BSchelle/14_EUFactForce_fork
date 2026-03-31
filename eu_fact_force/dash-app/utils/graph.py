@@ -85,20 +85,21 @@ class TestGraph:
         # chunks
         for i, chunk in enumerate(self.search_results["chunks"]):
             chunk_id = f"chunk_{i}"
+            document_id = chunk["metadata"]["document_id"]
+            document_metadata = self.search_results["documents"][document_id]
             filters["chunk_types"].append(chunk["type"])
+            filters["documents"].append(document_id)
+            filters["date"].append(document_metadata["date"])
             nodes[chunk_id] = {
                 "data": {
                     "id": chunk_id,
                     "label": chunk_id,
                     "type": "chunk",
                     "metadata": chunk,
+                    "document_metadata": document_metadata,
                 }
             }
-            # documents
-            document_id = chunk["metadata"]["document_id"]
-            document_metadata = self.search_results["documents"][document_id]
-            filters["documents"].append(document_id)
-            filters["date"].append(document_metadata["date"])
+
             if document_id not in nodes:
                 nodes[document_id] = {
                     "data": {
@@ -118,7 +119,7 @@ class TestGraph:
             )
             # journal and authors
             journal_id = f"journal_{document_metadata['journal']}"
-            filters["journal"].append(journal_id)
+            filters["journal"].append(document_metadata["journal"])
             if journal_id not in nodes:
                 nodes[journal_id] = {
                     "data": {
@@ -137,7 +138,7 @@ class TestGraph:
             )
             for author in document_metadata["authors"]:
                 author_id = f"author_{author}"
-                filters["authors"].append(author_id)
+                filters["authors"].append(author)
                 if author_id not in nodes:
                     nodes[author_id] = {
                         "data": {"id": author_id, "label": author, "type": "author"}
@@ -154,7 +155,7 @@ class TestGraph:
             # keywords
             for keyword in chunk["metadata"]["keywords"]:
                 keyword_id = f"keyword_{keyword}"
-                filters["keywords"].append(keyword_id)
+                filters["keywords"].append(keyword)
                 if keyword_id not in nodes:
                     nodes[keyword_id] = {
                         "data": {"id": keyword_id, "label": keyword, "type": "keyword"}
