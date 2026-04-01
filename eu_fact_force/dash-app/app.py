@@ -406,5 +406,74 @@ def finalize_and_display_json(n_clicks, doi, abstract, journal, date, link, cate
         html.Pre(json.dumps(metadata_json, indent=4), style={'backgroundColor': '#f8f9fa', 'padding': '15px', 'borderRadius': '8px', 'border': '1px solid #dee2e6'})
                     ])
 
+
+
+import requests
+import json
+import base64
+from dash import Input, Output, State, no_update
+import dash_bootstrap_components as dbc
+
+@app.callback(
+    Output('upload-status-output', 'children'), # Un composant pour afficher le succès/erreur
+    Input('btn-upload-backend', 'n_clicks'),    # Ton bouton "Upload to S3/DB"
+    State('upload-pdf', 'contents'),            # Le PDF d'origine (base64)
+    State('upload-pdf', 'filename'),            # Le nom du fichier
+    State('input-title', 'value'),              # Les champs potentiellement modifiés
+    State('input-doi', 'value'),
+    State('input-abstract', 'value'),
+    State('input-journal', 'value'),
+    State('input-date', 'value'),
+    State('input-link', 'value'),
+    prevent_initial_call=True
+)
+def finalize_and_send(n_clicks, pdf_base64, filename, doi, abstract, journal, date, link, category, study_type, title, names, surnames, emails):
+    if not n_clicks:
+        return no_update
+
+    authors_list = [
+        {"name": n, "surname": s, "email": e}
+        for n, s, e in zip(names, surnames, emails) if n or s
+    ]
+
+    # 1. On prépare l'objet JSON final avec les données du formulaire
+    metadata_payload = {
+        "title": title,
+        "category": category,
+        "study_type": study_type,
+        "journal": journal,
+        "publication_year": date,
+        "doi": doi,
+        "article_link": link,
+        "abstract": abstract,
+        "authors": authors_list
+    }
+
+    # 2. On décode le PDF pour l'envoyer en binaire
+    try:
+        content_type, content_string = pdf_base64.split(',')
+        pdf_bytes = base64.b64decode(content_string)
+
+        # 3. Envoi à l'API FastAPI
+        url = "http://localhost:8001/upload/"
+
+        files = {
+            'file': (filename, pdf_bytes, 'application/pdf')
+        }
+        data = {
+            'metadata': json.dumps(metadata_payload)
+        }
+
+        response = requests.post(url, files=files, data=data)
+
+        if response.status_code == 200:
+            return dbc.Alert(f"Succès ! {filename} et ses métadonnées sont sur S3.", color="success")
+        else:
+            return dbc.Alert(f"Erreur API ({response.status_code}): {response.text}", color="danger")
+
+    except Exception as e:
+        return dbc.Alert(f"Erreur lors de l'envoi : {str(e)}", color="danger")
+
+
 if __name__ == "__main__":
     app.run(debug=True)
