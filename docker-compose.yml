@@ -48,20 +48,22 @@ services:
       retries: 5
 
   localstack:
-    image: localstack/localstack:latest
-    ports:
-      - 4566
-    environment:
-      SERVICES: s3
-      PERSISTENCE: 1
-      AWS_DEFAULT_REGION: ${AWS_S3_REGION_NAME:-eu-west-1}
-      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME:-eu-fact-force-files}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-test}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-test}
-      DEBUG: ${DEBUG:-0}
-    volumes:
-      - ./s3:/var/lib/localstack
-      - ./docker/localstack/init-ready.d:/etc/localstack/init/ready.d:ro
+      image: localstack/localstack:3.3        # ← latest → 3.3
+      ports:
+        - "4566:4566"                          # ← exposer sur le host
+      environment:
+        SERVICES: s3
+        PERSISTENCE: 1
+        AWS_DEFAULT_REGION: ${AWS_S3_REGION_NAME:-eu-west-1}
+        AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME:-eu-fact-force-files}
+        AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-test}
+        AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-test}
+        DEBUG: ${DEBUG:-0}
+        LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT: 1   # ← sursis licence
+      volumes:
+        - ./s3:/var/lib/localstack
+        - ./docker/localstack/init-ready.d:/etc/localstack/init/ready.d:ro
+        - /var/run/docker.sock:/var/run/docker.sock     # ← socket Docker
 
 volumes:
   postgres_data:
