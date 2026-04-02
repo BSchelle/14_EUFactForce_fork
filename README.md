@@ -178,11 +178,11 @@ AWS_S3_REGION_NAME=eu-west-1
 Sans ces variables, l'application utilise le stockage fichier local par défaut.
 
 
-**7. Démarrer la web-app d'ingestion vers le S3**
+**7. Démarrer la web-app d'ingestion vers le S3 local**
 
 Pour rapatrier l'upload d'un couple PDF/métadatas :
 
-***Lancer le containeur Docker ***
+***Lancer le containeur Docker***
 ```bash
 docker compose up -d
 ```
@@ -197,6 +197,8 @@ Le bucket configuré est créé automatiquement au démarrage de LocalStack.
 uv sync
 uv run python manage.py migrate
 ```
+
+***Lancer le pipeline Dash-app > API > Localstack***
 
 ***Démarrer le serveur Django :***
 
