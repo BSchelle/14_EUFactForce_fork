@@ -1,0 +1,82 @@
+# eu_fact_force/ingestion/api.py
+
+import json
+from pathlib import Path
+import tempfile
+
+from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
+from rest_framework import status
+
+from .services import save_to_s3_and_postgres, save_chunks, add_embeddings
+from .parsing import parse_file
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser])
+def upload_pdf(request):
+    """
+    Reçoit un PDF + métadonnées JSON depuis Dash,
+    lance le pipeline d'ingestion et retourne le statut.
+    """
+    # 1. Validation des inputs
+    pdf_file = request.FILES.get('file')
+    metadata_raw = request.data.get('metadata')
+
+    if not pdf_file:
+        return Response(
+            {"error": "Fichier PDF manquant"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    if not metadata_raw:
+        return Response(
+            {"error": "Métadonnées manquantes"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        metadata = json.loads(metadata_raw)
+    except json.JSONDecodeError:
+        return Response(
+            {"error": "Métadonnées JSON invalides"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # 2. Sauvegarde temporaire du PDF sur disque pour le pipeline
+    with tempfile.NamedTemporaryFile(
+        suffix='.pdf',
+        delete=False
+    ) as tmp:
+        for chunk in pdf_file.chunks():
+            tmp.write(chunk)
+        tmp_path = Path(tmp.name)
+
+    # 3. Pipeline : S3 + Postgres + parsing + embeddings
+    try:
+        doi = metadata.get('doi')
+        tags = metadata.get('authors', [])
+
+        source_file = save_to_s3_and_postgres(
+            local_file_path=tmp_path,
+            tags_pubmed=tags,
+            doi=doi,
+        )
+        document_parts = parse_file(source_file)
+        chunks = save_chunks(source_file, document_parts)
+        add_embeddings(chunks)
+
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    finally:
+        tmp_path.unlink(missing_ok=True)  # nettoyage fichier temporaire
+
+    return Response({
+        "status": "success",
+        "source_file_id": source_file.id,
+        "filename": pdf_file.name,
+        "chunks_count": len(chunks),
+    }, status=status.HTTP_201_CREATED)

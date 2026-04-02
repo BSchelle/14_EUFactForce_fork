@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import base64
 import io
 import json
+import os
 from pathlib import Path
 import requests
 import uuid
@@ -417,7 +418,7 @@ def finalize_and_send(n_clicks, pdf_base64, filename, doi, abstract, journal, da
         content_type, content_string = pdf_base64.split(',')
         pdf_bytes = base64.b64decode(content_string)
 
-        url = "http://localhost:8001/upload/"
+        url = os.getenv("DJANGO_URL", "http://localhost:8000") + "/ingestion/api/upload/"
 
         files = {
             'file': (filename, pdf_bytes, 'application/pdf')
