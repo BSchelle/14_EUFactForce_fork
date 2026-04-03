@@ -20,48 +20,6 @@ VACCINS_ANNOTATED_KEY = "vaccins_annotated.json"
 PDF_PREFIX = "pdf"
 
 
-def fetch_annotated_list(s3_client) -> list[dict]:
-    """Download and parse vaccins_annotated.json from bucket performances."""
-    resp = s3_client.get_object(
-        Bucket=PERFORMANCES_BUCKET_NAME,
-        Key=VACCINS_ANNOTATED_KEY,
-    )
-    data = json.loads(resp["Body"].read().decode())
-    if not isinstance(data, list):
-        raise ValueError(f"Expected list in {VACCINS_ANNOTATED_KEY}, got {type(data)}")
-    return data
-
-
-def download_pdf_and_json(s3_client, key: str, dest_dir: Path) -> tuple[Path, dict]:
-    """
-    Download pdf/<key>.pdf and pdf/<key>.json into dest_dir.
-    Returns (path_to_pdf, path_to_json, tags_pubmed from JSON).
-    Raises or logs on missing objects.
-    """
-    pdf_key = f"{key}.pdf"
-    json_key = f"{key}.json"
-
-    try:
-        s3_client.head_object(Bucket=PERFORMANCES_BUCKET_NAME, Key=pdf_key)
-    except s3_client.exceptions.ClientError:
-        raise FileNotFoundError(f"S3 object not found: {pdf_key}")
-
-    try:
-        s3_client.head_object(Bucket=PERFORMANCES_BUCKET_NAME, Key=json_key)
-    except s3_client.exceptions.ClientError:
-        raise FileNotFoundError(f"S3 object not found: {json_key}")
-
-    pdf_path = dest_dir / f"{key}.pdf"
-    json_path = dest_dir / f"{key}.json"
-
-    s3_client.download_file(PERFORMANCES_BUCKET_NAME, pdf_key, str(pdf_path))
-    s3_client.download_file(PERFORMANCES_BUCKET_NAME, json_key, str(json_path))
-
-    with open(json_path, encoding="utf-8") as f:
-        metadata = json.load(f)
-    return pdf_path, metadata
-
-
 class Command(BaseCommand):
     help = (
         "Read vaccins_annotated.json from S3 bucket performances, "
