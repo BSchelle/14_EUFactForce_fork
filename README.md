@@ -176,3 +176,38 @@ AWS_S3_REGION_NAME=eu-west-1
 ```
 
 Sans ces variables, l’application utilise le stockage fichier local par défaut.
+
+## Test de performance
+
+Le projet propose un ensemble de documents relatifs aux liens entre les vaccins et l'autisme.
+Ces documents vont permettre de tester de bout en bout la pipeline : 
+- parsing des pdf,
+- extraction des chunks,
+- vectorisation des chuncks,
+- mécanisme de recherche.
+
+Puisque tous les documents ne sont pas nécessairement facilement accessible via les API, les documents et les metadata sont réunis dans un archive (puis un S3 dans un second temps).
+L'archive contient : 
+- la liste des paragraphes les plus pertinents à extraire dans le json `vaccins_annotated.json`,
+- les fichiers pdf,
+- un fichier json par pdf contenant les métadonnées.
+
+Le fichier json contient la structure suivante :
+
+```json
+{
+    "tags_pubmed": [
+        "tag1",
+        "tag2",
+        "tag3"
+    ],
+    "title" : "Title",
+    "category" : "category",
+    "type" : "type",
+    "journal": "journal",
+    "authors" : ["first author", "seocond author"],
+    "year": 2022,
+    "url" : "http",
+    "doi" : "test_doi"
+}
+```
