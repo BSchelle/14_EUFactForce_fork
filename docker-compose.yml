@@ -48,9 +48,9 @@ services:
       retries: 5
 
   localstack:
-      image: localstack/localstack:3.3 #latest conflicted w/ FastAPI
+      image: localstack/localstack:3.3 #latest conflicted w/ front
       ports:
-        - "4566:4566" #required listening port for FastAPI
+        - "4566:4566" #required listening port for
       environment:
         SERVICES: s3
         PERSISTENCE: 1
