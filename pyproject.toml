@@ -21,6 +21,7 @@ dependencies = [
     "uvicorn>=0.42.0",
     "python-multipart>=0.0.22",
     "djangorestframework>=3.17.1",
+    "docling>=2.85.0",
 ]
 
 [tool.pytest.ini_options]

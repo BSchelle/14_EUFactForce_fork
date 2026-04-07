@@ -182,7 +182,7 @@ Sans ces variables, l'application utilise le stockage fichier local par défaut.
 
 Pour rapatrier l'upload d'un couple PDF/métadatas :
 
-***Lancer le containeur Docker***
+**Lancer le containeur Docker**
 ```bash
 docker compose up -d
 ```
@@ -191,14 +191,12 @@ Cela démarre PostgreSQL (port 5432) et LocalStack S3 (port 4566) et écoute sur
 ce port.
 Le bucket configuré est créé automatiquement au démarrage de LocalStack.
 
-***Installer les dépendances et appliquer les migrations***
+**Installer les dépendances et appliquer les migrations**
 
 ```bash
-uv sync
+uv sync --group dev --group  parsing --group graph
 uv run python manage.py migrate
 ```
-
-***Lancer la Dash-app pour sauvegarder PDF & métadatas Localstack***
 
 ***Démarrer le serveur Django :***
 
@@ -209,5 +207,11 @@ uv run python manage.py runserver
 ***Démarrer la webapp Dash***
 
 ```bash
-uv run python ingestion/front_upload/api_front_upload.py
+uv run python eu_fact_force/dash-app/app.py
+```
+
+**Optionnel: Créer le bucket de sauvegarde si non disponible**
+
+```bash
+docker exec -it 14_eufactforce_fork-localstack-1 awslocal s3 mb s3://eu-fact-force-files
 ```

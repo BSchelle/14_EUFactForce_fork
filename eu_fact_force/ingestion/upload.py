@@ -1,5 +1,3 @@
-# eu_fact_force/ingestion/api.py
-
 import json
 from pathlib import Path
 import tempfile
@@ -20,7 +18,7 @@ def upload_pdf(request):
     Reçoit un PDF + métadonnées JSON depuis Dash,
     lance le pipeline d'ingestion et retourne le statut.
     """
-    # 1. Validation des inputs
+    # data validation
     pdf_file = request.FILES.get('file')
     metadata_raw = request.data.get('metadata')
 
@@ -35,6 +33,7 @@ def upload_pdf(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    #valid metadata test
     try:
         metadata = json.loads(metadata_raw)
     except json.JSONDecodeError:
@@ -43,7 +42,7 @@ def upload_pdf(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # 2. Sauvegarde temporaire du PDF sur disque pour le pipeline
+    # temp data save
     with tempfile.NamedTemporaryFile(
         suffix='.pdf',
         delete=False
@@ -52,7 +51,7 @@ def upload_pdf(request):
             tmp.write(chunk)
         tmp_path = Path(tmp.name)
 
-    # 3. Pipeline : S3 + Postgres + parsing + embeddings
+    # data pipeline save -> parse -> embedding
     try:
         doi = metadata.get('doi')
         tags = metadata.get('authors', [])
@@ -72,7 +71,7 @@ def upload_pdf(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     finally:
-        tmp_path.unlink(missing_ok=True)  # nettoyage fichier temporaire
+        tmp_path.unlink(missing_ok=True)  # clean temp file
 
     return Response({
         "status": "success",
