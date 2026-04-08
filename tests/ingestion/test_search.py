@@ -1,17 +1,14 @@
 """Tests for semantic search over document chunks."""
 
-from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
-from eu_fact_force.ingestion import parsing as parsing_module
+from eu_fact_force.ingestion import models as ingestion_models
 from eu_fact_force.ingestion import search as search_module
-from eu_fact_force.ingestion import services as services_module
 from eu_fact_force.ingestion.chunking import MAX_CHUNK_CHARS
-from eu_fact_force.ingestion.models import DocumentChunk, EMBEDDING_DIMENSIONS, SourceFile
-from eu_fact_force.ingestion.services import run_pipeline
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+from eu_fact_force.ingestion.models import EMBEDDING_DIMENSIONS, DocumentChunk
+from tests.factories import DocumentChunkFactory, SourceFileFactory
 
 # Tolerance for float distance comparison.
 DISTANCE_TOLERANCE = 1e-5
@@ -36,20 +33,19 @@ def _one_hot_vector(index: int, dim: int = EMBEDDING_DIMENSIONS) -> list[float]:
 
 class TestSearchChunks:
     @pytest.mark.django_db
-    def test_returns_chunks_ordered_by_distance(self, monkeypatch):
+    @patch("eu_fact_force.ingestion.search.embed_query")
+    def test_returns_chunks_ordered_by_distance(self, mock_embed_query):
         """search_chunks returns (chunk, distance) tuples ordered by cosine distance."""
-        source = SourceFile.objects.create(
-            doi="d", s3_key="k", status=SourceFile.Status.STORED
-        )
-        # Query [1,0,...,0]: closest to chunk_near (same), then chunk_far ([0,1,0,...,0]).
-        chunk_far = DocumentChunk.objects.create(
-            source_file=source, content="far", order=1, embedding=_one_hot_vector(1)
-        )
-        chunk_near = DocumentChunk.objects.create(
-            source_file=source, content="near", order=2, embedding=_one_hot_vector(0)
-        )
+        mock_embed_query.side_effect = lambda _: _one_hot_vector(0)
 
-        monkeypatch.setattr(search_module, "embed_query", lambda _: _one_hot_vector(0))
+        source = SourceFileFactory()
+        # Query [1,0,...,0]: closest to chunk_near (same), then chunk_far ([0,1,0,...,0]).
+        chunk_far = DocumentChunkFactory(
+            source_file=source, content="far", embedding=_one_hot_vector(1)
+        )
+        chunk_near = DocumentChunkFactory(
+            source_file=source, content="near", embedding=_one_hot_vector(0)
+        )
 
         results = search_module.search_chunks("dummy", k=5)
 
@@ -63,21 +59,16 @@ class TestSearchChunks:
         assert d2 > 0
 
     @pytest.mark.django_db
-    def test_excludes_chunks_without_embedding(self, monkeypatch):
+    @patch("eu_fact_force.ingestion.search.embed_query")
+    def test_excludes_chunks_without_embedding(self, mock_embed_query):
         """Only chunks with a stored embedding are returned."""
-        source = SourceFile.objects.create(
-            doi="d", s3_key="k", status=SourceFile.Status.STORED
-        )
-        with_emb = DocumentChunk.objects.create(
-            source_file=source, content="with", order=1, embedding=_constant_vector(0.1)
-        )
-        DocumentChunk.objects.create(
-            source_file=source, content="without", order=2, embedding=None
-        )
+        mock_embed_query.side_effect = lambda _: _constant_vector(0.1)
 
-        monkeypatch.setattr(
-            search_module, "embed_query", lambda _: _constant_vector(0.1)
+        source = SourceFileFactory()
+        with_emb = DocumentChunkFactory(
+            source_file=source, content="with", embedding=_constant_vector(0.1)
         )
+        DocumentChunkFactory(source_file=source, content="without", embedding=None)
 
         results = search_module.search_chunks("q", k=5)
 
@@ -86,22 +77,17 @@ class TestSearchChunks:
         assert results[0][0].pk == with_emb.pk
 
     @pytest.mark.django_db
-    def test_respects_k(self, monkeypatch):
+    @patch("eu_fact_force.ingestion.search.embed_query")
+    def test_respects_k(self, mock_embed_query):
         """At most k results are returned."""
-        source = SourceFile.objects.create(
-            doi="d", s3_key="k", status=SourceFile.Status.STORED
-        )
-        for i in range(5):
-            DocumentChunk.objects.create(
+        mock_embed_query.side_effect = lambda _: _constant_vector(0.5)
+
+        source = SourceFileFactory()
+        for _ in range(5):
+            DocumentChunkFactory(
                 source_file=source,
-                content=f"c{i}",
-                order=i,
                 embedding=_constant_vector(0.5),
             )
-
-        monkeypatch.setattr(
-            search_module, "embed_query", lambda _: _constant_vector(0.5)
-        )
 
         assert len(search_module.search_chunks("q", k=2)) == 2
         assert len(search_module.search_chunks("q", k=10)) == 5
@@ -113,41 +99,39 @@ class TestSearchChunks:
             search_module.search_chunks("q", k=0)
 
     @pytest.mark.django_db
+    @patch("eu_fact_force.ingestion.search.embed_query")
+    @patch("eu_fact_force.ingestion.models.EMBEDDING_DIMENSIONS", 2)
     def test_pipeline_then_search_returns_chunks_ordered_by_similarity(
-        self, tmp_storage, monkeypatch
+        self, mock_embed_query
     ):
-        """Run pipeline with mocked parse and add_embeddings, then search; order matches."""
-        readme_fn = PROJECT_ROOT / "README.md"
-        assert readme_fn.exists(), f"Test file must exist: {readme_fn}"
+        """Three chunks in DB (factories); search order follows cosine distance in rank-2."""
+        full_dim = DocumentChunk._meta.get_field("embedding").dimensions
+        rank_dim = ingestion_models.EMBEDDING_DIMENSIONS
 
-        # Long enough so paragraph chunking produces three separate chunks (max_chunk_chars=1200).
-        p1, p2, p3 = "A" * PARAGRAPH_LEN, "B" * PARAGRAPH_LEN, "C" * PARAGRAPH_LEN
-        parsed_text = f"{p1}\n\n{p2}\n\n{p3}"
-        monkeypatch.setattr(
-            parsing_module,
-            "_extract_text_from_source_file",
-            lambda _: parsed_text,
+        def _rank2_in_full_space(x: float, y: float) -> list[float]:
+            return [x, y] + [0.0] * (full_dim - rank_dim)
+
+        source_file = SourceFileFactory()
+
+        same = DocumentChunkFactory(
+            source_file=source_file, embedding=_rank2_in_full_space(1.0, 0.0)
+        )
+        near = DocumentChunkFactory(
+            source_file=source_file, embedding=_rank2_in_full_space(0.99, 0.01)
+        )
+        far = DocumentChunkFactory(
+            source_file=source_file, embedding=_rank2_in_full_space(0.0, 1.0)
         )
 
-        # Vectors so cosine distance order is well-defined: p1 closest, then p2, then p3.
-        def _add_known_embeddings(chunks):
-            near = _one_hot_vector(0)
-            mid = [SECOND_CLOSEST_VEC_ALIGNED] + [SECOND_CLOSEST_VEC_OFF] + [0.0] * (
-                EMBEDDING_DIMENSIONS - 2
-            )
-            far = _one_hot_vector(1)
-            vecs = [near, mid, far]
-            for i, ch in enumerate(chunks):
-                if ch.pk and ch.content.strip() and i < len(vecs):
-                    ch.embedding = vecs[i]
-            DocumentChunk.objects.bulk_update(chunks, ["embedding"])
-
-        monkeypatch.setattr(services_module, "add_embeddings", _add_known_embeddings)
-        monkeypatch.setattr(search_module, "embed_query", lambda _: _one_hot_vector(0))
-
-        source_file, _ = run_pipeline("README.md")
+        mock_embed_query.side_effect = lambda _: _rank2_in_full_space(1.0, 0.0)
         results = search_module.search_chunks("query", k=5)
 
         contents = [r[0].content for r in results]
-        assert contents == [p1, p2, p3]
+        assert contents == [same.content, near.content, far.content]
+        similarities = [r[1] for r in results]
+        assert similarities == [
+            0.0,
+            pytest.approx(5.1e-5, abs=1e-6),
+            pytest.approx(1.0),
+        ]
         assert all(r[0].source_file_id == source_file.pk for r in results)
