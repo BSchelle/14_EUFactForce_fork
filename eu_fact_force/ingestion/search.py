@@ -49,7 +49,7 @@ def search_narrative(narrative: str, k: int = 10) -> list[tuple[DocumentChunk, f
     return search_chunks(prompt.read_text(), k)
 
 
-def chunks_context(top_chunks: list[DocumentChunk, float]) -> dict:
+def chunks_context(top_chunks: list[tuple[DocumentChunk, float]]) -> dict:
     chunks = [
         {
             "type": "text",
