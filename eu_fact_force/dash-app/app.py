@@ -11,7 +11,7 @@ import json
 import uuid
 
 from utils.colors import EUPHAColors
-from utils.graph import TestGraph
+from utils.graph import TestGraph, format_node_metadata
 from utils.parsing import extract_pdf_metadata
 from pages import readme, ingest, graph
 
@@ -404,11 +404,7 @@ def update_graph_and_list(
             dbc.Accordion(
                 [
                     dbc.AccordionItem(
-                        dcc.Markdown(
-                            "\n".join(
-                                [f"- {key.capitalize()} : __{x[key]}__" for key in x]
-                            )
-                        ),
+                        format_node_metadata(x),
                         title=x["label"].replace("_", " ").title(),
                     )
                     for x in list_elements
@@ -436,18 +432,7 @@ def update_graph_and_list(
 )
 def toggle_offcanvas(node_data, is_open):
     if node_data:
-        return [
-            not is_open,
-            dcc.Markdown(
-                "\n".join(
-                    [
-                        f"- {key.capitalize()} : __{node_data[key]}__"
-                        for key in node_data
-                        if key != "timeStamp"
-                    ]
-                )
-            ),
-        ]
+        return [not is_open, format_node_metadata(node_data)]
 
 
 # --------------------
