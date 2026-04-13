@@ -15,8 +15,8 @@ from .parsing import parse_file
 @parser_classes([MultiPartParser])
 def upload_pdf(request):
     """
-    Reçoit un PDF + métadonnées JSON depuis Dash,
-    lance le pipeline d'ingestion et retourne le statut.
+    Receives a PDF + JSON metadata from Dash,
+    runs the ingestion pipeline and returns the status.
     """
     # data validation
     pdf_file = request.FILES.get('file')
@@ -53,6 +53,10 @@ def upload_pdf(request):
 
     # data pipeline save -> parse -> embedding
     try:
+        # variable initialization to avoid NameError if not found in try block
+        source_file = None
+        chunks = []
+
         doi = metadata.get('doi')
         tags = metadata.get('authors', [])
 

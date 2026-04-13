@@ -180,31 +180,11 @@ Sans ces variables, l'application utilise le stockage fichier local par défaut.
 
 **7. Démarrer la web-app d'ingestion vers le S3 local**
 
-Pour rapatrier l'upload d'un couple PDF/métadatas :
+Pour permettre l'upload d'un couple PDF/métadatas vers le serveur S3 :
 
-**Lancer le containeur Docker**
-```bash
-docker compose up -d
-```
+**Lancer les services (Postgres et LocalStack) et le serveur Django (étapes 3 à 6)**
 
-Cela démarre PostgreSQL (port 5432) et LocalStack S3 (port 4566) et écoute sur
-ce port.
-Le bucket configuré est créé automatiquement au démarrage de LocalStack.
-
-**Installer les dépendances et appliquer les migrations**
-
-```bash
-uv sync --group dev --group  parsing --group graph
-uv run python manage.py migrate
-```
-
-***Démarrer le serveur Django :***
-
-```bash
-uv run python manage.py runserver
-```
-
-***Démarrer la webapp Dash***
+**Démarrer la webapp Dash**
 
 ```bash
 uv run python eu_fact_force/dash-app/app.py

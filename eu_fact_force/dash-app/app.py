@@ -46,6 +46,11 @@ pages = {
     "Graph": {"href": "/graph", "content": graph},
 }
 
+# Backend URL
+DJANGO_URL = os.getenv("DJANGO_URL")
+if not DJANGO_URL:
+    raise RuntimeError("DJANGO_URL env var is required")
+
 # Header and navigation
 nav_pages = [
     dbc.NavLink(
@@ -388,12 +393,12 @@ def lock_authors(is_correct, ids):
     prevent_initial_call=True
 )
 def finalize_and_send(n_clicks, pdf_base64, filename, doi, abstract, journal, date, link, category, study_type, title, names, surnames, emails):
-    # Dash vérifie maintenant que pdf_base64 reçoit bien 'contents' et filename reçoit 'filename'
+    # Assertion pdf_base64 <- 'contents' and filename <- 'filename'
 
     if not n_clicks or pdf_base64 is None:
         return no_update
 
-    print(f"Tentative d'envoi pour : {filename}") # DEBUG CLI
+    print(f"Tentative d'envoi pour : {filename}") # Server log to verify data upload
 
     authors_list = [
         {"name": n, "surname": s, "email": e}
@@ -413,11 +418,13 @@ def finalize_and_send(n_clicks, pdf_base64, filename, doi, abstract, journal, da
     }
 
     try:
-        # Décodage propre
+        # Decode the PDF content from base64
         content_type, content_string = pdf_base64.split(',')
         pdf_bytes = base64.b64decode(content_string)
 
-        url = os.getenv("DJANGO_URL", "http://localhost:8000") + "/ingestion/api/upload/"
+        url = DJANGO_URL + "/ingestion/api/upload/"
+
+
 
         files = {
             'file': (filename, pdf_bytes, 'application/pdf')
